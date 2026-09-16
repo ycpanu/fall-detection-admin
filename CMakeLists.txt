@@ -8,7 +8,7 @@ set(CMAKE_AUTOMOC ON)   #自动处理 Q_OBJECT 宏
 set(CMAKE_AUTORCC ON)   #自动编译 .qrc 资源文件
 set(CMAKE_AUTOUIC ON)   #自动把 .ui 文件转成 C++ 代码
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network Charts)
 
 # 收集源码文件
 file(GLOB_RECURSE SRC_FILES "src/*.cpp")
@@ -27,4 +27,5 @@ add_executable(FallDetectionAdmin ${SRC_FILES})
 target_link_libraries(FallDetectionAdmin PRIVATE
     Qt6::Widgets
     Qt6::Network
+    Qt6::Charts
 )
