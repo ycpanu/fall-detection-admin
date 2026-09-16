@@ -1,0 +1,78 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "FallDetectionAdmin",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "FallDetectionAdmin::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-FallDetectionAdmin-Debug-1ecf3be9ee2500d334a6.json",
+					"name" : "FallDetectionAdmin",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "FallDetectionAdmin_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-FallDetectionAdmin_autogen-Debug-bd2a2d041ae791d1d500.json",
+					"name" : "FallDetectionAdmin_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "FallDetectionAdmin_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-FallDetectionAdmin_autogen_timestamp_deps-Debug-41bba72ab065dd500b71.json",
+					"name" : "FallDetectionAdmin_autogen_timestamp_deps",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "F:/Projects/fall-detection-gateway/fall-detection-admin/build/Desktop_Qt_6_11_2_MinGW_64_bit_Debug",
+		"source" : "F:/Projects/fall-detection-gateway/fall-detection-admin"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

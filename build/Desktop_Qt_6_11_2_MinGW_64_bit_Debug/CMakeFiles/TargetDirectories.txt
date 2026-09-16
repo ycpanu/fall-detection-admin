@@ -1,0 +1,5 @@
+F:/Projects/fall-detection-gateway/fall-detection-admin/build/Desktop_Qt_6_11_2_MinGW_64_bit_Debug/CMakeFiles/FallDetectionAdmin.dir
+F:/Projects/fall-detection-gateway/fall-detection-admin/build/Desktop_Qt_6_11_2_MinGW_64_bit_Debug/CMakeFiles/edit_cache.dir
+F:/Projects/fall-detection-gateway/fall-detection-admin/build/Desktop_Qt_6_11_2_MinGW_64_bit_Debug/CMakeFiles/rebuild_cache.dir
+F:/Projects/fall-detection-gateway/fall-detection-admin/build/Desktop_Qt_6_11_2_MinGW_64_bit_Debug/CMakeFiles/FallDetectionAdmin_autogen_timestamp_deps.dir
+F:/Projects/fall-detection-gateway/fall-detection-admin/build/Desktop_Qt_6_11_2_MinGW_64_bit_Debug/CMakeFiles/FallDetectionAdmin_autogen.dir
