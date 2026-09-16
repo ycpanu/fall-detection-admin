@@ -4,13 +4,11 @@
 #include <QMainWindow>
 #include <QNetworkAccessManager> 
 #include <QNetworkReply>         
-// 引入 Qt Charts 模块
+#include <QLabel>
+#include <QTableWidget>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
-#include <QtCharts/QBarSeries>
-#include <QtCharts/QBarSet>
 #include <QtCharts/QValueAxis>
-#include <QtCharts/QBarCategoryAxis>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -25,16 +23,18 @@ public:
     ~MainWindow();
 
 private slots:
-    void fetchAlarmData();     // 拉取报警记录
-    void fetchDashboardData(); // 拉取数据大盘统计
-    void fetchDeviceData();    // 拉取设备列表
+    void fetchAlarmData();     
+    void fetchDashboardData(); 
+    void fetchDeviceData();    
 
 private:
     Ui::MainWindow *ui;
     QNetworkAccessManager *networkManager; 
     
-    // 图表视图指针，用于动态刷新数据
-    QChartView* dashboardChartView;
+    // 用于接收异步网络数据并刷新的 UI 成员指针
+    QLabel* kpiLabels[4];         // 大盘顶部的 4 个数字卡片
+    QLineSeries* trendSeries;     // 大盘底部的 7 天趋势折线
+    QTableWidget* deviceTable;    // 设备管理表格
 };
 
 #endif // MAINWINDOW_H
