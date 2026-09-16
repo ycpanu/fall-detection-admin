@@ -6,17 +6,23 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>919</width>
-    <height>543</height>
+    <width>1024</width>
+    <height>768</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>摔倒检测系统 - 后台管理</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QListWidget" name="listWidget">
+      <property name="maximumSize">
+       <size>
+        <width>150</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <item>
        <property name="text">
         <string>数据大盘</string>
@@ -37,17 +43,83 @@
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
-      <widget class="QWidget" name="page_3">
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <widget class="QWidget" name="page_dashboard">
+       <widget class="QLabel" name="label_dashboard">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>30</y>
+          <width>200</width>
+          <height>30</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>数据大盘 (开发中...)</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="page_device">
+       <widget class="QLabel" name="label_device">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>30</y>
+          <width>200</width>
+          <height>30</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>设备管理 (开发中...)</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="page_alarms">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_header">
+          <item>
+           <widget class="QLabel" name="label_title">
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>实时报警记录</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="refreshButton">
+            <property name="text">
+             <string>刷新数据</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item>
          <widget class="QTableWidget" name="alarmTableWidget"/>
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="page"/>
-      <widget class="QWidget" name="page_2"/>
      </widget>
     </item>
    </layout>
@@ -57,7 +129,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>919</width>
+     <width>1024</width>
      <height>25</height>
     </rect>
    </property>
