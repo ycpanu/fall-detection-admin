@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     trendSeries = new QLineSeries(); // 初始化为成员变量，不再塞入假数据
     QChart *chart = new QChart();
     chart->addSeries(trendSeries);
-    chart->setTitle("近 7 天摔倒报警趋势图");
+    chart->setTitle("近 7 天报警趋势图");
     chart->setAnimationOptions(QChart::SeriesAnimations);
     chart->legend()->hide();
     
@@ -123,8 +123,17 @@ MainWindow::MainWindow(QWidget *parent)
         alarmLayout->insertLayout(0, topBarLayout);
     }
 
-    ui->alarmTableWidget->setColumnCount(4);
-    ui->alarmTableWidget->setHorizontalHeaderLabels(QStringList() << "报警时间" << "设备ID" << "检测状态" << "现场视频");
+    ui->alarmTableWidget->setColumnCount(7);
+    ui->alarmTableWidget->setHorizontalHeaderLabels(
+        QStringList() 
+        << "报警时间" 
+        << "设备ID" 
+        << "报警类型"
+        << "触发来源"
+        << "报警状态"
+        << "事件描述" 
+        << "现场视频"
+    );
     ui->alarmTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->alarmTableWidget->verticalHeader()->setVisible(false);
     ui->alarmTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -184,43 +193,332 @@ MainWindow::MainWindow(QWidget *parent)
                     ui->statusbar->showMessage("✅ 设备真实数据已更新", 3000);
                 }
                 // [路由 C] : 接收到报警中心数据
-                else if (currentUrl.contains("/api/alerts")) 
+                else if (currentUrl.contains("/api/alerts"))
                 {
-                    QJsonArray arr = jsonDoc.object()["data"].toArray();
-                    ui->alarmTableWidget->setRowCount(arr.size());
-                    for (int i = 0; i < arr.size(); ++i) {
-                        QJsonObject obj = arr[i].toObject();
-                        qint64 ts = obj["server_receive_time"].toVariant().toLongLong();
-                        if (ts == 0) ts = obj["timestamp"].toVariant().toLongLong();
-                        QString timeStr = QDateTime::fromMSecsSinceEpoch(ts).toString("yyyy-MM-dd HH:mm:ss");
+                    QJsonArray arr =
+                        jsonDoc.object()["data"].toArray();
 
-                        QString status = obj["status"].toString();
-                        QString videoUrl = obj["video_url"].toString();
+                    ui->alarmTableWidget
+                        ->setRowCount(arr.size());
 
-                        ui->alarmTableWidget->setItem(i, 0, new QTableWidgetItem(timeStr));
-                        ui->alarmTableWidget->setItem(i, 1, new QTableWidgetItem(obj["device_id"].toString()));
 
-                        QTableWidgetItem* statusItem = new QTableWidgetItem(status);
-                        if (status == "CRITICAL" || status == "摔倒") {
-                            statusItem->setForeground(QBrush(Qt::red));
-                            QFont font = statusItem->font();
+                    for (int i = 0;
+                        i < arr.size();
+                        ++i)
+                    {
+                        QJsonObject obj =
+                            arr[i].toObject();
+
+
+                        // =====================================
+                        // 1. 报警时间
+                        // =====================================
+
+                        qint64 ts =
+                            obj["server_receive_time"]
+                                .toVariant()
+                                .toLongLong();
+
+                        if (ts == 0)
+                        {
+                            ts =
+                                obj["timestamp"]
+                                    .toVariant()
+                                    .toLongLong();
+                        }
+
+                        QString timeStr =
+                            QDateTime::fromMSecsSinceEpoch(ts)
+                                .toString(
+                                    "yyyy-MM-dd HH:mm:ss"
+                                );
+
+
+                        // =====================================
+                        // 2. 报警类型
+                        // =====================================
+
+                        QString eventType =
+                            obj["event_type"].toString();
+
+                        QString eventTypeText;
+
+                        if (eventType == "FALL")
+                        {
+                            eventTypeText =
+                                "跌倒报警";
+                        }
+                        else if (
+                            eventType == "HELP_REQUEST")
+                        {
+                            eventTypeText =
+                                "语音求救";
+                        }
+                        else
+                        {
+                            eventTypeText =
+                                "未知报警";
+                        }
+
+
+                        // =====================================
+                        // 3. 触发来源
+                        // =====================================
+
+                        QJsonArray sources =
+                            obj["sources"].toArray();
+
+                        QStringList sourceTexts;
+
+
+                        for (const auto& value : sources)
+                        {
+                            QString source =
+                                value.toString();
+
+                            if (source == "VISION")
+                            {
+                                sourceTexts
+                                    << "视觉";
+                            }
+                            else if (source == "VOICE")
+                            {
+                                sourceTexts
+                                    << "语音";
+                            }
+                            else
+                            {
+                                sourceTexts
+                                    << source;
+                            }
+                        }
+
+
+                        QString sourceText =
+                            sourceTexts.join(" + ");
+
+
+                        // =====================================
+                        // 4. 报警状态
+                        // =====================================
+
+                        QString status =
+                            obj["status"].toString();
+
+                        QString statusText;
+
+                        if (status == "NEW")
+                        {
+                            statusText =
+                                "未处理";
+                        }
+                        else if (
+                            status == "ACKNOWLEDGED")
+                        {
+                            statusText =
+                                "已确认";
+                        }
+                        else if (
+                            status == "RESOLVED")
+                        {
+                            statusText =
+                                "已处理";
+                        }
+                        else
+                        {
+                            statusText =
+                                status;
+                        }
+
+
+                        // =====================================
+                        // 5. 事件详情
+                        // =====================================
+
+                        QString detailText;
+
+
+                        if (eventType == "HELP_REQUEST")
+                        {
+                            QString keyword =
+                                obj["keyword"].toString();
+
+                            if (!keyword.isEmpty())
+                            {
+                                detailText =
+                                    "关键词：" + keyword;
+                            }
+                            else
+                            {
+                                detailText =
+                                    "语音关键词触发";
+                            }
+                        }
+                        else if (eventType == "FALL")
+                        {
+                            int trackId =
+                                obj["person_track_id"]
+                                    .toInt(-1);
+
+                            if (trackId >= 0)
+                            {
+                                detailText =
+                                    QString(
+                                        "人员轨迹 #%1"
+                                    ).arg(trackId);
+                            }
+                            else
+                            {
+                                detailText =
+                                    "视觉检测触发";
+                            }
+                        }
+
+
+                        // =====================================
+                        // 6. 写入表格
+                        // =====================================
+
+                        ui->alarmTableWidget
+                            ->setItem(
+                                i,
+                                0,
+                                new QTableWidgetItem(
+                                    timeStr
+                                )
+                            );
+
+
+                        ui->alarmTableWidget
+                            ->setItem(
+                                i,
+                                1,
+                                new QTableWidgetItem(
+                                    obj["device_id"]
+                                        .toString()
+                                )
+                            );
+
+
+                        QTableWidgetItem* typeItem =
+                            new QTableWidgetItem(
+                                eventTypeText
+                            );
+
+
+                        // 跌倒报警突出显示
+                        if (eventType == "FALL")
+                        {
+                            typeItem->setForeground(
+                                QBrush(Qt::red)
+                            );
+
+                            QFont font =
+                                typeItem->font();
+
                             font.setBold(true);
-                            statusItem->setFont(font);
-                        }
-                        ui->alarmTableWidget->setItem(i, 2, statusItem);
 
-                        QLabel* linkLabel = new QLabel();
-                        if (!videoUrl.isEmpty()) {
-                            linkLabel->setText(QString("<a href='%1'>🎬 播放现场录像</a>").arg(videoUrl));
-                            linkLabel->setOpenExternalLinks(true);
-                        } else {
-                            linkLabel->setText("暂无视频");
-                            linkLabel->setStyleSheet("color: gray;");
+                            typeItem->setFont(
+                                font
+                            );
                         }
-                        linkLabel->setAlignment(Qt::AlignCenter);
-                        ui->alarmTableWidget->setCellWidget(i, 3, linkLabel);
+
+
+                        ui->alarmTableWidget
+                            ->setItem(
+                                i,
+                                2,
+                                typeItem
+                            );
+
+
+                        ui->alarmTableWidget
+                            ->setItem(
+                                i,
+                                3,
+                                new QTableWidgetItem(
+                                    sourceText
+                                )
+                            );
+
+
+                        ui->alarmTableWidget
+                            ->setItem(
+                                i,
+                                4,
+                                new QTableWidgetItem(
+                                    statusText
+                                )
+                            );
+
+
+                        ui->alarmTableWidget
+                            ->setItem(
+                                i,
+                                5,
+                                new QTableWidgetItem(
+                                    detailText
+                                )
+                            );
+
+
+                        // =====================================
+                        // 7. 现场视频
+                        // =====================================
+
+                        QString videoUrl =
+                            obj["video_url"].toString();
+
+
+                        QLabel* linkLabel =
+                            new QLabel();
+
+
+                        if (!videoUrl.isEmpty())
+                        {
+                            linkLabel->setText(
+                                QString(
+                                    "<a href='%1'>播放现场录像</a>"
+                                ).arg(videoUrl)
+                            );
+
+                            linkLabel
+                                ->setOpenExternalLinks(
+                                    true
+                                );
+                        }
+                        else
+                        {
+                            linkLabel->setText(
+                                "暂无视频"
+                            );
+
+                            linkLabel->setStyleSheet(
+                                "color: gray;"
+                            );
+                        }
+
+
+                        linkLabel->setAlignment(
+                            Qt::AlignCenter
+                        );
+
+
+                        ui->alarmTableWidget
+                            ->setCellWidget(
+                                i,
+                                6,
+                                linkLabel
+                            );
                     }
-                    ui->statusbar->showMessage(QString("✅ 报警中心刷新成功，共加载 %1 条记录。").arg(arr.size()), 5000);
+
+
+                    ui->statusbar->showMessage(
+                        QString(
+                            "报警中心刷新成功，共加载 %1 条记录"
+                        ).arg(arr.size()),
+                        5000
+                    );
                 }
             }
         }
