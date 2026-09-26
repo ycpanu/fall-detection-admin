@@ -29,8 +29,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QVBoxLayout* dashboardLayout = qobject_cast<QVBoxLayout*>(dashboardPage->layout());
     
     QHBoxLayout* kpiLayout = new QHBoxLayout();
-    QStringList kpiTitles = {"当前在线网关", "今日报警总数", "待处理警情", "NPU 平均利用率"};
-    for (int i = 0; i < 4; ++i) {
+    QStringList kpiTitles = {"当前在线网关", "今日报警总数", "今日跌倒报警","今日语音求救", "待处理事件"};
+    for (int i = 0; i < 5; ++i) {
         QWidget* card = new QWidget();
         card->setStyleSheet("background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;");
         QVBoxLayout* cardLayout = new QVBoxLayout(card);
@@ -47,24 +47,34 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
     dashboardLayout->addLayout(kpiLayout);
 
-    trendSeries = new QLineSeries(); // 初始化为成员变量，不再塞入假数据
-    QChart *chart = new QChart();
-    chart->addSeries(trendSeries);
-    chart->setTitle("近 7 天报警趋势图");
+    fallTrendSeries = new QLineSeries();
+    helpTrendSeries = new QLineSeries();
+
+    fallTrendSeries->setName("跌倒报警");
+    helpTrendSeries->setName("语音求救");
+
+    QChart* chart = new QChart();
+
+    chart->addSeries(fallTrendSeries);
+    chart->addSeries(helpTrendSeries);
+
+    chart->setTitle("近 7 天报警趋势");
     chart->setAnimationOptions(QChart::SeriesAnimations);
-    chart->legend()->hide();
+    chart->legend()->show();
     
     QValueAxis *axisX = new QValueAxis;
     axisX->setTitleText("天数 (倒推)");
     axisX->setRange(0, 6);
     chart->addAxis(axisX, Qt::AlignBottom);
-    trendSeries->attachAxis(axisX);
+    fallTrendSeries->attachAxis(axisX);
+    helpTrendSeries->attachAxis(axisX);
     
     QValueAxis *axisY = new QValueAxis;
     axisY->setTitleText("报警次数");
     axisY->setRange(0, 10); // 初始化 Y 轴，接收到真实数据后会动态拔高
     chart->addAxis(axisY, Qt::AlignLeft);
-    trendSeries->attachAxis(axisY);
+    fallTrendSeries->attachAxis(axisY);
+    helpTrendSeries->attachAxis(axisY);
 
     QChartView* dashboardChartView = new QChartView(chart);
     dashboardChartView->setRenderHint(QPainter::Antialiasing); 
@@ -159,19 +169,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     
                     kpiLabels[0]->setText(QString("%1 台").arg(dataObj["online_gateways"].toInt()));
                     kpiLabels[1]->setText(QString("%1 起").arg(dataObj["today_alerts"].toInt()));
-                    kpiLabels[2]->setText(QString("%1 起").arg(dataObj["pending_alerts"].toInt()));
-                    kpiLabels[3]->setText(dataObj["npu_usage"].toString());
+                    kpiLabels[2]->setText(QString("%1 起").arg(dataObj["today_fall_alerts"].toInt()));
+                    kpiLabels[3]->setText(QString("%1 起").arg(dataObj["today_help_alerts"].toInt()));
+                    kpiLabels[4]->setText(QString("%1 起").arg(dataObj["pending_alerts"].toInt()));
 
-                    QJsonArray trendArr = dataObj["trend_7_days"].toArray();
-                    trendSeries->clear();
+                    QJsonArray fallTrendArr = dataObj["fall_trend_7_days"].toArray();
+                    QJsonArray helpTrendArr = dataObj["help_trend_7_days"].toArray();
+
+                    fallTrendSeries->clear();
+                    helpTrendSeries->clear();
+
                     int maxAlerts = 10;
-                    for (int i = 0; i < trendArr.size(); ++i) {
-                        int count = trendArr[i].toInt();
-                        trendSeries->append(i, count);
-                        if (count > maxAlerts) maxAlerts = count;
+
+                    for (int i = 0; i < fallTrendArr.size(); ++i) {
+                        int count = fallTrendArr[i].toInt();
+                        fallTrendSeries->append(i, count);
+
+                        if (count > maxAlerts)
+                            maxAlerts = count;
+                    }
+
+                    for (int i = 0; i < helpTrendArr.size(); ++i) {
+                        int count = helpTrendArr[i].toInt();
+                        helpTrendSeries->append(i, count);
+
+                        if (count > maxAlerts)
+                            maxAlerts = count;
                     }
                     // 动态调整 Y 轴高度以适应真实数据最大值
-                    QList<QAbstractAxis*> axes = trendSeries->chart()->axes(Qt::Vertical);
+                    QList<QAbstractAxis*> axes = fallTrendSeries->chart()->axes(Qt::Vertical);
                     if (!axes.isEmpty()) qobject_cast<QValueAxis*>(axes.first())->setRange(0, maxAlerts + 5);
 
                     ui->statusbar->showMessage("✅ 大盘真实数据已更新", 3000);

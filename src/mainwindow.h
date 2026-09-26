@@ -31,10 +31,11 @@ private:
     Ui::MainWindow *ui;
     QNetworkAccessManager *networkManager; 
     
-    // 用于接收异步网络数据并刷新的 UI 成员指针
-    QLabel* kpiLabels[4];         // 大盘顶部的 4 个数字卡片
-    QLineSeries* trendSeries;     // 大盘底部的 7 天趋势折线
-    QTableWidget* deviceTable;    // 设备管理表格
+    QLabel* kpiLabels[5];
+    QLineSeries* fallTrendSeries;
+    QLineSeries* helpTrendSeries;
+
+    QTableWidget* deviceTable;
 };
 
 #endif // MAINWINDOW_H
