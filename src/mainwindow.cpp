@@ -16,9 +16,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     networkManager = new QNetworkAccessManager(this);
@@ -95,7 +93,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     deviceTable = new QTableWidget(); // 成员变量
     deviceTable->setColumnCount(5);
-    deviceTable->setHorizontalHeaderLabels(QStringList() << "设备标识 (Device ID)" << "部署位置" << "在线状态" << "模型版本" << "操作");
+    deviceTable->setHorizontalHeaderLabels(QStringList() << "设备标识 (Device ID)" << "部署区域" << "在线状态" << "模型版本" << "操作");
     deviceTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     deviceTable->verticalHeader()->setVisible(false);
     deviceTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -108,7 +106,8 @@ MainWindow::MainWindow(QWidget *parent)
     QVBoxLayout* alarmLayout = qobject_cast<QVBoxLayout*>(alarmPage->layout());
     if (!alarmLayout) alarmLayout = new QVBoxLayout(alarmPage);
     
-    if (alarmLayout->count() == 1) { 
+    if (alarmLayout->count() == 1) 
+    { 
         QHBoxLayout* topBarLayout = new QHBoxLayout();
         QLabel* titleLabel = new QLabel("<b>实时报警中心</b>");
         titleLabel->setStyleSheet("font-size: 16px;");
@@ -123,24 +122,26 @@ MainWindow::MainWindow(QWidget *parent)
         alarmLayout->insertLayout(0, topBarLayout);
     }
 
-    ui->alarmTableWidget->setColumnCount(7);
+    ui->alarmTableWidget->setColumnCount(9);
     ui->alarmTableWidget->setHorizontalHeaderLabels(
         QStringList() 
         << "报警时间" 
         << "设备ID" 
+        << "部署区域"
         << "报警类型"
         << "触发来源"
         << "报警状态"
         << "事件描述" 
         << "现场视频"
+        << "现场"
     );
+
     ui->alarmTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->alarmTableWidget->verticalHeader()->setVisible(false);
     ui->alarmTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->alarmTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-
-    // ================= 4. 统一处理网络回调响应 (核心业务路由分发) =================
+    //4. 统一处理网络回调响应 (核心业务路由分发)
     connect(networkManager, &QNetworkAccessManager::finished, this, [=](QNetworkReply *reply)
     {
         if (reply->error() == QNetworkReply::NoError)
@@ -182,8 +183,9 @@ MainWindow::MainWindow(QWidget *parent)
                     deviceTable->setRowCount(arr.size());
                     for (int i = 0; i < arr.size(); ++i) {
                         QJsonObject obj = arr[i].toObject();
+                        QString deploymentArea = obj["deployment_area"].toString("未配置区域");
                         deviceTable->setItem(i, 0, new QTableWidgetItem(obj["device_id"].toString()));
-                        deviceTable->setItem(i, 1, new QTableWidgetItem(obj["location"].toString()));
+                        deviceTable->setItem(i, 1, new QTableWidgetItem(obj["deployment_area"].toString("未配置区域")));
                         deviceTable->setItem(i, 2, new QTableWidgetItem(obj["status"].toString()));
                         deviceTable->setItem(i, 3, new QTableWidgetItem(obj["model_version"].toString()));
                         
@@ -192,333 +194,248 @@ MainWindow::MainWindow(QWidget *parent)
                     }
                     ui->statusbar->showMessage("✅ 设备真实数据已更新", 3000);
                 }
+                else if (currentUrl.contains("/api/alerts/") && currentUrl.endsWith("/status"))
+                {
+                    ui->statusbar->showMessage("报警状态更新成功", 3000);
+
+                    // 更新成功以后重新获取报警列表
+                    fetchAlarmData();
+                }
                 // [路由 C] : 接收到报警中心数据
                 else if (currentUrl.contains("/api/alerts"))
                 {
-                    QJsonArray arr =
-                        jsonDoc.object()["data"].toArray();
+                    QJsonArray arr = jsonDoc.object()["data"].toArray();
 
-                    ui->alarmTableWidget
-                        ->setRowCount(arr.size());
+                    ui->alarmTableWidget->setRowCount(arr.size());
 
-
-                    for (int i = 0;
-                        i < arr.size();
-                        ++i)
+                    for (int i = 0; i < arr.size(); ++i)
                     {
-                        QJsonObject obj =
-                            arr[i].toObject();
+                        QJsonObject obj = arr[i].toObject();
 
+                        QString eventId = obj["event_id"].toString();
 
-                        // =====================================
                         // 1. 报警时间
-                        // =====================================
-
-                        qint64 ts =
-                            obj["server_receive_time"]
-                                .toVariant()
-                                .toLongLong();
+                        qint64 ts = obj["server_receive_time"].toVariant().toLongLong();
 
                         if (ts == 0)
                         {
-                            ts =
-                                obj["timestamp"]
-                                    .toVariant()
-                                    .toLongLong();
+                            ts = obj["timestamp"].toVariant().toLongLong();
                         }
 
-                        QString timeStr =
-                            QDateTime::fromMSecsSinceEpoch(ts)
-                                .toString(
-                                    "yyyy-MM-dd HH:mm:ss"
-                                );
-
-
-                        // =====================================
+                        QString timeStr = QDateTime::fromMSecsSinceEpoch(ts).toString("yyyy-MM-dd HH:mm:ss");
+  
                         // 2. 报警类型
-                        // =====================================
-
-                        QString eventType =
-                            obj["event_type"].toString();
+                        QString eventType = obj["event_type"].toString();
 
                         QString eventTypeText;
 
                         if (eventType == "FALL")
                         {
-                            eventTypeText =
-                                "跌倒报警";
+                            eventTypeText = "跌倒报警";
                         }
-                        else if (
-                            eventType == "HELP_REQUEST")
+                        else if (eventType == "HELP_REQUEST")
                         {
-                            eventTypeText =
-                                "语音求救";
+                            eventTypeText = "语音求救";
                         }
                         else
                         {
-                            eventTypeText =
-                                "未知报警";
+                            eventTypeText = "未知报警";
                         }
 
-
-                        // =====================================
                         // 3. 触发来源
-                        // =====================================
-
-                        QJsonArray sources =
-                            obj["sources"].toArray();
+                        QJsonArray sources = obj["sources"].toArray();
 
                         QStringList sourceTexts;
-
-
                         for (const auto& value : sources)
                         {
-                            QString source =
-                                value.toString();
+                            QString source = value.toString();
 
                             if (source == "VISION")
                             {
-                                sourceTexts
-                                    << "视觉";
+                                sourceTexts << "视觉";
                             }
                             else if (source == "VOICE")
                             {
-                                sourceTexts
-                                    << "语音";
+                                sourceTexts << "语音";
                             }
                             else
                             {
-                                sourceTexts
-                                    << source;
+                                sourceTexts << source;
                             }
                         }
 
+                        QString sourceText = sourceTexts.join(" + ");
 
-                        QString sourceText =
-                            sourceTexts.join(" + ");
-
-
-                        // =====================================
                         // 4. 报警状态
-                        // =====================================
-
-                        QString status =
-                            obj["status"].toString();
+                        QString status = obj["status"].toString();
 
                         QString statusText;
 
                         if (status == "NEW")
                         {
-                            statusText =
-                                "未处理";
+                            statusText = "未处理";
                         }
                         else if (
                             status == "ACKNOWLEDGED")
                         {
-                            statusText =
-                                "已确认";
+                            statusText = "已确认";
                         }
                         else if (
                             status == "RESOLVED")
                         {
-                            statusText =
-                                "已处理";
+                            statusText = "已处理";
                         }
                         else
                         {
-                            statusText =
-                                status;
+                            statusText = status;
                         }
 
-
-                        // =====================================
                         // 5. 事件详情
-                        // =====================================
-
                         QString detailText;
-
-
                         if (eventType == "HELP_REQUEST")
                         {
-                            QString keyword =
-                                obj["keyword"].toString();
+                            QString keyword = obj["keyword"].toString();
 
                             if (!keyword.isEmpty())
                             {
-                                detailText =
-                                    "关键词：" + keyword;
+                                detailText = "关键词：" + keyword;
                             }
                             else
                             {
-                                detailText =
-                                    "语音关键词触发";
+                                detailText = "语音关键词触发";
                             }
                         }
                         else if (eventType == "FALL")
                         {
-                            int trackId =
-                                obj["person_track_id"]
-                                    .toInt(-1);
+                            int trackId = obj["person_track_id"].toInt(-1);
 
                             if (trackId >= 0)
                             {
-                                detailText =
-                                    QString(
-                                        "人员轨迹 #%1"
-                                    ).arg(trackId);
+                                detailText = QString("人员轨迹 #%1").arg(trackId);
                             }
                             else
                             {
-                                detailText =
-                                    "视觉检测触发";
+                                detailText = "视觉检测触发";
                             }
                         }
 
-
-                        // =====================================
                         // 6. 写入表格
-                        // =====================================
+                        ui->alarmTableWidget->setItem(i, 0, new QTableWidgetItem(timeStr));
+                        ui->alarmTableWidget->setItem(i, 1, new QTableWidgetItem(obj["device_id"].toString()));
 
-                        ui->alarmTableWidget
-                            ->setItem(
-                                i,
-                                0,
-                                new QTableWidgetItem(
-                                    timeStr
-                                )
-                            );
+                        // 2：部署区域
+                        QString deploymentArea = obj["deployment_area"].toString("未配置区域");
 
-
-                        ui->alarmTableWidget
-                            ->setItem(
-                                i,
-                                1,
-                                new QTableWidgetItem(
-                                    obj["device_id"]
-                                        .toString()
-                                )
-                            );
-
-
-                        QTableWidgetItem* typeItem =
-                            new QTableWidgetItem(
-                                eventTypeText
-                            );
-
+                        ui->alarmTableWidget->setItem(i, 2, new QTableWidgetItem(deploymentArea));
+                            
+                        // 创建报警类型 Item
+                        QTableWidgetItem* typeItem = new QTableWidgetItem(eventTypeText);
 
                         // 跌倒报警突出显示
                         if (eventType == "FALL")
                         {
-                            typeItem->setForeground(
-                                QBrush(Qt::red)
-                            );
+                            typeItem->setForeground(QBrush(Qt::red));
 
-                            QFont font =
-                                typeItem->font();
+                            QFont font = typeItem->font();
 
                             font.setBold(true);
 
-                            typeItem->setFont(
-                                font
-                            );
+                            typeItem->setFont(font);
                         }
 
+                        ui->alarmTableWidget->setItem(i,3,typeItem);
 
-                        ui->alarmTableWidget
-                            ->setItem(
-                                i,
-                                2,
-                                typeItem
-                            );
+                        ui->alarmTableWidget->setItem(i,4,new QTableWidgetItem(sourceText));
 
+                        ui->alarmTableWidget->setItem(i,5,new QTableWidgetItem(statusText));
 
-                        ui->alarmTableWidget
-                            ->setItem(
-                                i,
-                                3,
-                                new QTableWidgetItem(
-                                    sourceText
-                                )
-                            );
+                        ui->alarmTableWidget->setItem(i,6,new QTableWidgetItem(detailText));
 
-
-                        ui->alarmTableWidget
-                            ->setItem(
-                                i,
-                                4,
-                                new QTableWidgetItem(
-                                    statusText
-                                )
-                            );
-
-
-                        ui->alarmTableWidget
-                            ->setItem(
-                                i,
-                                5,
-                                new QTableWidgetItem(
-                                    detailText
-                                )
-                            );
-
-
-                        // =====================================
                         // 7. 现场视频
-                        // =====================================
+                        QString videoUrl = obj["video_url"].toString();
 
-                        QString videoUrl =
-                            obj["video_url"].toString();
-
-
-                        QLabel* linkLabel =
-                            new QLabel();
-
+                        QLabel* linkLabel = new QLabel();
 
                         if (!videoUrl.isEmpty())
                         {
-                            linkLabel->setText(
-                                QString(
-                                    "<a href='%1'>播放现场录像</a>"
-                                ).arg(videoUrl)
-                            );
+                            linkLabel->setText(QString("<a href='%1'>播放现场录像</a>").arg(videoUrl));
 
-                            linkLabel
-                                ->setOpenExternalLinks(
-                                    true
-                                );
+                            linkLabel->setOpenExternalLinks(true);
                         }
                         else
                         {
-                            linkLabel->setText(
-                                "暂无视频"
-                            );
+                            linkLabel->setText("暂无视频");
 
-                            linkLabel->setStyleSheet(
-                                "color: gray;"
-                            );
+                            linkLabel->setStyleSheet("color: gray;");
                         }
 
+                        linkLabel->setAlignment(Qt::AlignCenter);
 
-                        linkLabel->setAlignment(
-                            Qt::AlignCenter
-                        );
+                        ui->alarmTableWidget->setCellWidget(i,7,linkLabel);
 
+                        // 8. 报警处理按钮
+                        QPushButton* actionButton = new QPushButton();
 
-                        ui->alarmTableWidget
-                            ->setCellWidget(
-                                i,
-                                6,
-                                linkLabel
+                        QString targetStatus;
+
+                        // NEW -> ACKNOWLEDGED
+                        if (status == "NEW")
+                        {
+                            actionButton->setText("确认报警");
+
+                            targetStatus = "ACKNOWLEDGED";
+                        }
+
+                        // ACKNOWLEDGED -> RESOLVED
+                        else if (status == "ACKNOWLEDGED")
+                        {
+                            actionButton->setText("处理完成");
+
+                            targetStatus = "RESOLVED";
+                        }
+
+                        // RESOLVED 不允许继续操作
+                        else if (status == "RESOLVED")
+                        {
+                            actionButton->setText("已处理");
+
+                            actionButton->setEnabled(false);
+                        }
+                        else
+                        {
+                            actionButton->setText("未知状态");
+
+                            actionButton->setEnabled(false);
+                        }
+
+                        ui->alarmTableWidget->setCellWidget(i,8,actionButton);
+
+                        if (!targetStatus.isEmpty())
+                        {
+                            connect(actionButton,&QPushButton::clicked,this,
+                                [=]()
+                                {
+                                    QUrl url(QString("http://10.48.212.22:8000" "/api/alerts/%1/status").arg(eventId));
+
+                                    QNetworkRequest request(url);
+
+                                    request.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
+
+                                    QJsonObject body;
+
+                                    body["status"] = targetStatus;
+
+                                    QByteArray requestData = QJsonDocument(body).toJson(QJsonDocument::Compact);
+
+                                    networkManager->sendCustomRequest(request,"PATCH",requestData);
+
+                                    ui->statusbar->showMessage("正在更新报警状态...");
+                                }
                             );
+                        }
                     }
 
-
-                    ui->statusbar->showMessage(
-                        QString(
-                            "报警中心刷新成功，共加载 %1 条记录"
-                        ).arg(arr.size()),
-                        5000
-                    );
+                    ui->statusbar->showMessage(QString("报警中心刷新成功，共加载 %1 条记录").arg(arr.size()),5000);
                 }
             }
         }
@@ -529,8 +446,7 @@ MainWindow::MainWindow(QWidget *parent)
         reply->deleteLater(); 
     });
 
-
-    // ================= 5. 界面联动与路由触发 =================
+    //5. 界面联动与路由触发
     connect(ui->listWidget, &QListWidget::currentRowChanged, ui->stackedWidget, &QStackedWidget::setCurrentIndex);
     
     // 点击不同 Tab 时触发对应数据的物理拉取
