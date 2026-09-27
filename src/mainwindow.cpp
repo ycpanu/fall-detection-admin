@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QVBoxLayout* dashboardLayout = qobject_cast<QVBoxLayout*>(dashboardPage->layout());
     
     QHBoxLayout* kpiLayout = new QHBoxLayout();
-    QStringList kpiTitles = {"当前在线网关", "今日报警总数", "今日跌倒报警","今日语音求救", "待处理事件"};
+    QStringList kpiTitles = {"当前在线网关", "今日报警总数", "待处理事件", "Memory Usage", "Storage Usage"};
     for (int i = 0; i < 5; ++i) {
         QWidget* card = new QWidget();
         card->setStyleSheet("background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;");
@@ -168,10 +168,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     QJsonObject dataObj = jsonDoc.object()["data"].toObject();
                     
                     kpiLabels[0]->setText(QString("%1 台").arg(dataObj["online_gateways"].toInt()));
+
                     kpiLabels[1]->setText(QString("%1 起").arg(dataObj["today_alerts"].toInt()));
-                    kpiLabels[2]->setText(QString("%1 起").arg(dataObj["today_fall_alerts"].toInt()));
-                    kpiLabels[3]->setText(QString("%1 起").arg(dataObj["today_help_alerts"].toInt()));
-                    kpiLabels[4]->setText(QString("%1 起").arg(dataObj["pending_alerts"].toInt()));
+
+                    kpiLabels[2]->setText(QString("%1 起").arg(dataObj["pending_alerts"].toInt()));
+
+                    int memoryUsage = dataObj["memory_usage"].toInt(-1);
+
+                    int storageUsage = dataObj["storage_usage"].toInt(-1);
+
+                    kpiLabels[3]->setText(memoryUsage >= 0? QString("%1 %").arg(memoryUsage): "不可用");
+
+                    kpiLabels[4]->setText(storageUsage >= 0? QString("%1 %").arg(storageUsage): "不可用");
 
                     QJsonArray fallTrendArr = dataObj["fall_trend_7_days"].toArray();
                     QJsonArray helpTrendArr = dataObj["help_trend_7_days"].toArray();
