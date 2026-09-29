@@ -449,7 +449,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             connect(actionButton,&QPushButton::clicked,this,
                                 [=]()
                                 {
-                                    QUrl url(QString("http://10.48.212.22:8000" "/api/alerts/%1/status").arg(eventId));
+                                    QUrl url(QString("http://127.0.0.1:8000" "/api/alerts/%1/status").arg(eventId));
 
                                     QNetworkRequest request(url);
 
@@ -503,15 +503,15 @@ MainWindow::~MainWindow()
 // 三大 HTTP 发射器，向 FastAPI 后端发送请求
 void MainWindow::fetchDashboardData() {
     ui->statusbar->showMessage("正在拉取大盘统计数据...");
-    networkManager->get(QNetworkRequest(QUrl("http://10.48.212.22:8000/api/dashboard")));
+    networkManager->get(QNetworkRequest(QUrl("http://127.0.0.1:8000/api/dashboard")));
 }
 
 void MainWindow::fetchDeviceData() {
     ui->statusbar->showMessage("正在拉取设备台账...");
-    networkManager->get(QNetworkRequest(QUrl("http://10.48.212.22:8000/api/devices")));
+    networkManager->get(QNetworkRequest(QUrl("http://127.0.0.1:8000/api/devices")));
 }
 
 void MainWindow::fetchAlarmData() {
     ui->statusbar->showMessage("正在拉取最新报警记录...");
-    networkManager->get(QNetworkRequest(QUrl("http://10.48.212.22:8000/api/alerts?limit=50")));
+    networkManager->get(QNetworkRequest(QUrl("http://127.0.0.1:8000/api/alerts?limit=50")));
 }
