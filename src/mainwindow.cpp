@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "safezonedialog.h"
 #include <QListWidget>
 #include <QStackedWidget>
 #include <QHeaderView>
@@ -223,8 +224,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                         deviceTable->setItem(i, 2, new QTableWidgetItem(obj["status"].toString()));
                         deviceTable->setItem(i, 3, new QTableWidgetItem(obj["model_version"].toString()));
                         
+                        const QString deviceId = obj["device_id"].toString();
+
                         QPushButton* cfgBtn = new QPushButton("⚙️ 配置参数");
                         deviceTable->setCellWidget(i, 4, cfgBtn);
+
+                        connect(cfgBtn, &QPushButton::clicked, this, [this, deviceId]()
+                        {
+                            SafeZoneDialog dialog(
+                                deviceId,
+                                "http://127.0.0.1:8000",
+                                "rtmp://192.168.137.1:1935/live/stream",
+                                "http://127.0.0.1:8888/live/stream/index.m3u8",
+                                this
+                            );
+
+                            dialog.exec();
+                        });
                     }
                     ui->statusbar->showMessage("✅ 设备真实数据已更新", 3000);
                 }
