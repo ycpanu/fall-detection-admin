@@ -9,6 +9,7 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
+#include <QtCharts/QBarCategoryAxis>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -29,11 +30,15 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QNetworkAccessManager *networkManager; 
-    
+    QNetworkAccessManager *networkManager;
+
     QLabel* kpiLabels[5];
+
     QLineSeries* fallTrendSeries;
     QLineSeries* helpTrendSeries;
+
+    QBarCategoryAxis* trendAxisX;
+    QValueAxis* trendAxisY;
 
     QTableWidget* deviceTable;
 };
